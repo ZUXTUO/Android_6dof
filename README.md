@@ -1,4 +1,4 @@
-# 6DOF Android Demo
+# 6DOF Android Demo（实验性）
 
 一个使用 Android 传感器与原生 EKF 融合的 6 自由度位姿可视化示例。应用通过 `GLSurfaceView` 渲染网格与方向轴，实时显示设备的空间位置与姿态，并绘制移动轨迹。
 
@@ -38,14 +38,6 @@
   - `android.permission.HIGH_SAMPLING_RATE_SENSORS` 已在 `AndroidManifest.xml` 中声明。
 - 采样率降级回退：如无权限或设备限制，自动从 `FASTEST` 降级到 `GAME`，避免抛出 `SecurityException`。
 
-## 构建与安装
-1. 安装 JDK（推荐 JDK 17），在 IDE/环境中设置 `JAVA_HOME`。
-2. 使用 Android Studio 打开项目，选择合适的 SDK/NDK。
-3. 命令行构建：
-   - Windows：`./gradlew.bat :app:assembleDebug`
-   - macOS/Linux：`./gradlew :app:assembleDebug`
-4. 安装到真机并运行。
-
 ## 使用说明
 - 打开应用后，若设备无陀螺仪会弹出提示并退出。
 - 触控交互：
@@ -67,17 +59,13 @@
 - 提高线性加速度滤波 `alpha` 或增大置零幅值阈。
 - 提升 ZUPT 强度（更低的速度噪声）或提高速度阻尼系数。
 
-## 常见问题
-- Android 13+ 启动崩溃（`SecurityException`）
-  - 原因：未声明高采样率权限却以 `FASTEST` 注册传感器。
-  - 解决：已在清单添加权限，且代码中自动降级采样率并 `Toast` 提示。
-- 构建报错：Gradle 找不到 JDK
-  - 解决：安装 JDK 并设置 `JAVA_HOME`，在 IDE/Gradle 指定 JDK。
-
 ## 目录结构（简要）
 - `app/src/main/java/com/olsc/t6dof/`：`MainActivity`、渲染与传感器管理。
 - `app/src/main/cpp/`：`fusion.cpp`（JNI + 状态）、`ekf.cpp/.h`（滤波器）。
 - `app/src/main/AndroidManifest.xml`：权限与入口 Activity。
+
+## 注意
+目前仍是实验性功能，稳定性很差。
 
 ## 许可
 - 个人/学习用途示例。若需商用，请自行评估并完善健壮性与安全性。
