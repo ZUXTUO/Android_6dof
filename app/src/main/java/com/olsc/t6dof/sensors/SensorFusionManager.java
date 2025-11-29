@@ -24,10 +24,10 @@ public class SensorFusionManager implements SensorEventListener {
         Sensor mag = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         Sensor lin = sm.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         Sensor prs = sm.getDefaultSensor(Sensor.TYPE_PRESSURE);
-        registerWithFallback(sm, acc, SensorManager.SENSOR_DELAY_FASTEST);
-        registerWithFallback(sm, gyr, SensorManager.SENSOR_DELAY_FASTEST);
-        registerWithFallback(sm, mag, SensorManager.SENSOR_DELAY_FASTEST);
-        registerWithFallback(sm, lin, SensorManager.SENSOR_DELAY_FASTEST);
+        registerWithFallback(sm, acc, SensorManager.SENSOR_DELAY_GAME);
+        registerWithFallback(sm, gyr, SensorManager.SENSOR_DELAY_GAME);
+        registerWithFallback(sm, mag, SensorManager.SENSOR_DELAY_GAME);
+        registerWithFallback(sm, lin, SensorManager.SENSOR_DELAY_GAME);
         if (prs != null) sm.registerListener(this, prs, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
@@ -36,7 +36,7 @@ public class SensorFusionManager implements SensorEventListener {
         try {
             sm.registerListener(this, sensor, rate);
         } catch (SecurityException e) {
-            sm.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME);
+            sm.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
     }
 
