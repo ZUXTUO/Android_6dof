@@ -7,10 +7,11 @@ android {
     compileSdk {
         version = release(36)
     }
+    ndkVersion "29.0.14206865"
 
     defaultConfig {
         applicationId "com.olsc.t6dof"
-        minSdk 24
+        minSdk 21
         targetSdk 36
         versionCode 1
         versionName "1.0"
@@ -36,6 +37,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
+            version '4.1.2'
         }
     }
 }
