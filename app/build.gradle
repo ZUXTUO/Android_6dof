@@ -7,7 +7,6 @@ android {
     compileSdk {
         version = release(36)
     }
-    ndkVersion "29.0.14206865"
 
     defaultConfig {
         applicationId "com.olsc.t6dof"
@@ -17,12 +16,8 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        externalNativeBuild {
-            cmake {
-                cppFlags "-std=c++17"
-            }
-        }
     }
+
 
     buildTypes {
         release {
@@ -34,13 +29,8 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
-    externalNativeBuild {
-        cmake {
-            path file('src/main/cpp/CMakeLists.txt')
-            version '4.1.2'
-        }
-    }
 }
+
 
 dependencies {
     implementation libs.appcompat
