@@ -1,71 +1,75 @@
-# 6DOF Android Demo（实验性）
+# 3DOF Android 姿态跟踪 Demo
 
-一个使用 Android 传感器与原生 EKF 融合的 6 自由度位姿可视化示例。应用通过 `GLSurfaceView` 渲染网格与方向轴，实时显示设备的空间位置与姿态，并绘制移动轨迹。
+一个使用 Android 传感器的姿态跟踪可视化示例。应用通过 `GLSurfaceView` 渲染 3D 立方体，实时显示设备的三维姿态（俯仰、偏航、滚转），并在场景中固定显示物体。
+
+**注意：这是一个 3DOF（3自由度）姿态跟踪系统，只能跟踪设备的旋转状态，无法跟踪位置变化。**
 
 ## 项目简介
-- 实时读取加速度计、陀螺仪、磁力计、线性加速度与气压计数据。
-- 原生 C++ 实现扩展卡尔曼滤波（EKF），包含预测、零速更新（ZUPT）、重力/磁力校正、气压高度更新。
-- OpenGL ES 2.0 渲染：地面网格、正负方向轴（X/Z 分色）、相机视角环绕、轨迹线。
+- 实时读取设备传感器数据（优先使用旋转矢量传感器，备用方案为加速度计+磁力计）
+- 计算设备的 3D 姿态矩阵（旋转状态）
+- OpenGL ES 2.0 渲染：在场景中显示彩色立方体，跟随设备姿态变化
+- 支持屏幕旋转自适应和触控交互
 
 ## 功能特性
-- 位姿融合：支持 Acc/Gyro/Mag/Linear Acc/Barometer 的组合。
-- 快速静止响应：ZUPT 与速度阻尼在停止后迅速归零，抑制“滑行”。
-- 稳定性优化：线性加速度低通、磁力更新条件收紧、过程噪声调优、气压高度权重降低。
-- 渲染视图：
-  - 平面网格与地面方向轴（+X 红色，-X 深红；+Z 蓝色，-Z 深蓝；+Y 绿色）。
-  - 轨迹记录：停止抖动后稳定追加，避免过密点。
-  - 交互控制：单指拖动环绕，双指缩放。
+- 姿态跟踪：实时计算设备的 3D 旋转姿态
+- 传感器融合：
+  - 优先使用系统提供的旋转矢量传感器（精度最高，无累积误差）
+  - 备用方案：加速度计 + 磁力计手动计算姿态
+- 渲染显示：
+  - 彩色立方体在 3D 空间中固定显示
+  - 立方体跟随设备姿态实时旋转
+  - 深色背景配色，启用深度测试
 
-## 架构与坐标系
-- `app/src/main/java/com/olsc/t6dof/MainActivity.java`：UI、生命周期与手势；检查陀螺仪可用性；启动/停止传感器。
-- `app/src/main/java/com/olsc/t6dof/sensors/SensorFusionManager.java`：注册传感器、回调上报到原生。
-- `app/src/main/java/com/olsc/t6dof/sensors/NativeFusion.java`：JNI 封装，加载 `fusion` 原生库。
-- `app/src/main/cpp/fusion.cpp`：JNI 实现、EKF 状态管理、传感器入口、门限与滤波。
-- `app/src/main/cpp/ekf.cpp/.h`：EKF 预测/更新与状态矩阵。
-- `app/src/main/java/com/olsc/t6dof/render/PoseRenderer.java`：OpenGL ES 2.0 渲染与相机控制。
+## 架构说明
+- `app/src/main/java/com/olsc/t6dof/MainActivity.java`：应用主入口，负责初始化传感器和 OpenGL 渲染视图
+- `app/src/main/java/com/olsc/t6dof/sensors/OrientationSensor.java`：姿态传感器管理，处理旋转矢量传感器或加速度计+磁力计数据
+- `app/src/main/java/com/olsc/t6dof/render/ObjectRenderer.java`：OpenGL ES 2.0 渲染器，负责 3D 立方体的渲染和姿态矩阵计算
+- `app/src/main/cpp/native-lib.cpp`：JNI 原生库，提供矩阵运算和坐标变换功能
 
-坐标系约定：
-- EKF 输出为世界坐标 ENU（East-North-Up），位姿格式 `[px, py, pz, qw, qx, qy, qz]`。
-- 渲染使用 Y-Up；为对齐，渲染时对 `y/z` 做了映射并对四元数进行固定旋转补偿。
+坐标系说明：
+- 使用标准的 OpenGL 坐标系（右手坐标系）
+- Y 轴向上，X 轴向右，Z 轴指向观察者
+- 支持屏幕旋转自适应（0°、90°、180°、270°）
 
 ## 运行要求
-- Android 8.0+（API 26），建议 Android 13/14 设备。
-- 设备具备陀螺仪（无陀螺仪直接退出并提示）。
-- 支持 OpenGL ES 2.0。
+- Android 8.0+（API 26）
+- 设备具备以下传感器之一：
+  - 旋转矢量传感器（推荐）
+  - 或同时具备加速度计和磁力计
+- 支持 OpenGL ES 2.0
 
-## 权限与适配
-- 声明高采样率权限（Android 13+ 针对 `SENSOR_DELAY_FASTEST` 的要求）：
-  - `android.permission.HIGH_SAMPLING_RATE_SENSORS` 已在 `AndroidManifest.xml` 中声明。
-- 采样率降级回退：如无权限或设备限制，自动从 `FASTEST` 降级到 `GAME`，避免抛出 `SecurityException`。
+## 传感器说明
+- 优先使用旋转矢量传感器：系统级融合传感器，精度高且无累积漂移
+- 备用方案：加速度计 + 磁力计组合，通过 getRotationMatrix() 计算姿态
+- 采样率：使用 SENSOR_DELAY_GAME 模式，平衡性能和功耗
 
 ## 使用说明
-- 打开应用后，若设备无陀螺仪会弹出提示并退出。
-- 触控交互：
-  - 单指拖动：环绕相机视角（水平为偏航、垂直为俯仰）。
-  - 双指缩放：调整相机远近。
-- 视野中：
-  - 地面网格与方向轴，原点为当前融合的参考点。
-  - 设备位置用轨迹表示（连续点连线）。
+- 打开应用后，系统会检测设备传感器支持情况
+- 若设备缺少必要传感器，会提示并退出应用
+- 移动设备观察立方体如何跟随设备姿态旋转
+- 应用会自动适配屏幕旋转方向
 
-## 调参与稳定性
-- ZUPT（零速更新）：在静止约 20–40ms 内触发，速度强约束归零，并使用加速度重力矫正倾角。
-- 速度阻尼：加速度与角速度近零时指数衰减，极小速度软零处理，抑制停止后的“滑行”。
-- 线性加速度低通：`alpha=0.85`，幅值极小时直接置零，减少噪声积分。
-- 磁力更新：仅在干扰较低与角速度较小时更新，权重降低，避免航向突变。
-- 气压高度：噪声增大，降低短时高度抖动对 Z 的影响。
+## 技术特点
+- **无位置跟踪**：本系统仅为 3DOF 姿态跟踪，不涉及位置估计
+- **实时性好**：使用系统级旋转矢量传感器，延迟低，精度高
+- **稳定性强**：旋转矢量传感器内部已做传感器融合和误差校正
+- **兼容性强**：支持多种传感器配置，自动选择最优方案
 
-如需进一步稳定：
-- 增大磁力噪声或收紧更新阈值。
-- 提高线性加速度滤波 `alpha` 或增大置零幅值阈。
-- 提升 ZUPT 强度（更低的速度噪声）或提高速度阻尼系数。
+## 目录结构
+- `app/src/main/java/com/olsc/t6dof/`：Java 层源码
+  - `MainActivity.java`：应用主入口
+  - `sensors/OrientationSensor.java`：姿态传感器管理
+  - `render/ObjectRenderer.java`：OpenGL 渲染器
+- `app/src/main/cpp/`：C++ 原生代码
+  - `native-lib.cpp`：JNI 实现和矩阵运算
+  - `CMakeLists.txt`：构建配置
+- `app/src/main/AndroidManifest.xml`：应用配置和权限声明
 
-## 目录结构（简要）
-- `app/src/main/java/com/olsc/t6dof/`：`MainActivity`、渲染与传感器管理。
-- `app/src/main/cpp/`：`fusion.cpp`（JNI + 状态）、`ekf.cpp/.h`（滤波器）。
-- `app/src/main/AndroidManifest.xml`：权限与入口 Activity。
+## 注意事项
+- 这是 3DOF 姿态跟踪系统，**不具备位置跟踪能力**
+- 旋转矢量传感器在大多数现代 Android 设备上都有良好支持
+- 应用主要用于演示姿态跟踪效果，非生产级应用
+- 磁力计可能受环境磁场干扰，影响航向精度
 
-## 注意
-目前仍是实验性功能，稳定性很差。
-
-## 许可
-- 个人/学习用途示例。若需商用，请自行评估并完善健壮性与安全性。
+## 许可声明
+本项目仅供个人学习和研究使用。如需商业应用，请自行评估和完善相关功能。
